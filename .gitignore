@@ -50,5 +50,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-doc/.DS_Store
+
+# Mac hidden files
+*/.DS_Store
 .DS_Store
