@@ -10,40 +10,41 @@ ARFLAGS		= rcs
 
 # Variables
 
-SFS_LIB_HDRS	= $(wildcard include/fs/*.h)
-SFS_LIB_SRCS	= $(wildcard src/fs/*.c)
-SFS_LIB_OBJS	= $(SFS_LIB_SRCS:.c=.o)
-SFS_LIBRARY	= lib/libsfs.a
+LIB_HDRS	= $(wildcard include/fs/*.h)
+LIB_SRCS	= $(wildcard src/fs/*.c)
+LIB_OBJS	= $(LIB_SRCS:.c=.o)
+LIBRARY	= lib/libsfs.a
 
-SFS_SHL_SRCS	= $(wildcard src/shell/*.c)
-SFS_SHL_OBJS	= $(SFS_SHL_SRCS:.c=.o)
-SFS_SHELL	= bin/sfssh
+SRCS	= $(wildcard src/*.c)
+OBJS	= $(SRCS:.c=.o)
 
-SFS_TEST_SRCS   = $(wildcard src/tests/*.c)
-SFS_TEST_OBJS   = $(SFS_TEST_SRCS:.c=.o)
-SFS_UNIT_TESTS	= $(patsubst src/tests/%,bin/%,$(patsubst %.c,%,$(wildcard src/tests/unit_*.c)))
+SHELL	= bin/shell
+
+TEST_SRCS   = $(wildcard src/tests/*.c)
+TEST_OBJS   = $(TEST_SRCS:.c=.o)
+UNIT_TESTS	= $(patsubst src/tests/%,bin/%,$(patsubst %.c,%,$(wildcard src/tests/unit_*.c)))
 
 # Rules
 
-all:		$(SFS_LIBRARY) $(SFS_UNIT_TESTS) $(SFS_SHELL)
+all:		$(LIBRARY) $(UNIT_TESTS) $(SHELL)
 
-%.o:		%.c $(SFS_LIB_HDRS)
+%.o:		%.c $(LIB_HDRS)
 	@echo "Compiling $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-$(SFS_LIBRARY):	$(SFS_LIB_OBJS)
+$(LIBRARY):	$(LIB_OBJS)
 	@echo "Linking   $@"
 	@$(AR) $(ARFLAGS) $@ $^
 
-$(SFS_SHELL):	$(SFS_SHL_OBJS) $(SFS_LIBRARY)
+$(SHELL):	$(OBJS) $(LIBRARY)
 	@echo "Linking   $@"
 	@$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-bin/unit_%:	src/tests/unit_%.o $(SFS_LIBRARY)
+bin/unit_%:	src/tests/unit_%.o $(LIBRARY)
 	@echo "Linking   $@"
 	@$(LD) $(LDFLAGS) -o $@ $^
 
-test-unit:	$(SFS_UNIT_TESTS)
+test-unit:	$(UNIT_TESTS)
 	@for test in bin/unit_*; do 		\
 	    for i in $$(seq 0 $$($$test 2>&1 | tail -n 1 | awk '{print $$1}')); do \
 		echo "Running   $$(basename $$test) $$i";		\
@@ -53,7 +54,7 @@ test-unit:	$(SFS_UNIT_TESTS)
 	    done				\
 	done
 
-test-shell:	$(SFS_SHELL)
+test-shell:	$(SHELL)
 	@for test in bin/test_*.sh; do		\
 	    $$test;				\
 	done
@@ -62,15 +63,15 @@ test:	test-unit test-shell
 
 clean:
 	@echo "Removing  objects"
-	@rm -f $(SFS_LIB_OBJS) $(SFS_SHL_OBJS) $(SFS_TEST_OBJS)
+	@rm -f $(LIB_OBJS) $(OBJS) $(TEST_OBJS)
 
 	@echo "Removing  libraries"
-	@rm -f $(SFS_LIBRARY)
+	@rm -f $(LIBRARY)
 
 	@echo "Removing  programs"
-	@rm -f $(SFS_SHELL)
+	@rm -f $(SHELL)
 
 	@echo "Removing  tests"
-	@rm -f $(SFS_UNIT_TESTS) test.log
+	@rm -f $(UNIT_TESTS) test.log
 
 .PRECIOUS: %.o

@@ -1,7 +1,7 @@
 /* disk.c: SimpleFS disk emulator */
 
-#include "sfs/disk.h"
-#include "sfs/logging.h"
+#include "fs/disk.h"
+#include "fs/logging.h"
 
 #include <fcntl.h>
 #include <unistd.h>
