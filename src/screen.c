@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../include/logging.h"
+#include "../include/utils.h"
 
 int main(void)
 {
@@ -18,11 +18,11 @@ int main(void)
 		size_t args_length = 0;
 		if (getline(&args, &args_length, stdin) == -1)
 		{
-			error("Error reading input...");
+			log_error("Error reading input...");
 			exit(EXIT_FAILURE);
 		}
 
-		info("args: %s", args);
+		log_debug("args: %s", args);
 
 		/* TODO: Send the command to the shell */
 	}
