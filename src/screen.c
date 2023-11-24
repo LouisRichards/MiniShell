@@ -29,7 +29,6 @@ int main(void)
 		/* TODO: Temporary exit condition */
 		if (strcmp(args, "exit\n") == 0)
 		{
-			close_log_file();
 			should_run = 0;
 		}
 
@@ -38,6 +37,7 @@ int main(void)
 	
 	log_debug("Freeing args...\n");
 	free(args);
+	close_log_file();
 
 	return 0;
 }
