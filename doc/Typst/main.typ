@@ -45,6 +45,59 @@ Bien que le schéma initial nous ait fourni les grandes lignes directrices pour 
 
 == Fonctions globales
 
+== Émulateur de disque
+
+=== Create
+#lorem(100)
+
+=== Open
+
+#figure(
+  image("disk_open_activity.svg", width: 30%),
+  caption: [
+    Fonction Open
+  ]
+)
+
+Pour ouvrir un disque nous prenons en paramètre un pointeur vers la structure du disque à ouvrir et le chemin du disque. Nous vérifions d'abord que le disque ne soit pas déjà ouvert. Ensuite nous utilisons la fonction open de la librairie "fcntl" pour récupére le "file descripteur" de l'ouverture. Avec ce descripteur nous allons pouvoir récupérer la taille du disque. Grâce à la taille du disque que nous divisons par la taille d'un bloque nous pouvons savoir si le disque est corrompue ou non si le nombre de bloque n'est pas un entier. Nous mettons ensuite à jour la structure du disque en précisant que le disque est désormais ouvert et en remettant les compteurs d'écritures et de lectures à 0.
+
+=== Close
+
+#figure(
+  image("disk_close_activity.svg", width: 30%),
+  caption: [
+    Fonction Close
+  ]
+)
+
+Pour fermer un disque nous n'avons besoin que de la structure du disque à fermer où nous allons pouvoir récupérer le "file descripteur" du disque. Nous vérifions d'abord que le disque soit bien ouvert. Ensuite nous utilisons la fonction close de la librairie "unistd" pour fermer le disque. Nous finissons par libérer la mémoire attribuée à la structure.
+
+=== Read
+
+#figure(
+  image("disk_read_activity.svg", width: 30%),
+  caption: [
+    Fonction Read
+  ]
+)
+
+Afin de lire un disque nous prenons en paramètre les suivants : un pointeur vers la structure du disque, le block à lire, un chaîne de caractère où stoquer la lecture. Nous commencons par vérifier si le disque est valide, puis utilisons la fonction "lseek" de la librairie "unistd" pour nous placer au début du bloque à lire. Nous utilisons ensuite la fonction "read" de la même librairie en lui passant le "file descriptor", la chaîne de caractère et la taille d'un block. Nous finissons par incrémenter le nombre de lecture du disque.
+
+=== Write
+
+#figure(
+  image("disk_write_activity.svg", width: 30%),
+  caption: [
+    Fonction Write
+  ]
+)
+
+Pour écrire dans un disque nous prenons en paramètre les suivants : un pointeur vers la structure du disque, le block à écrire, un chaîne de caractère à écrire. Nous commencons par vérifier si le disque est valide, puis utilisons la fonction "lseek" de la librairie "unistd" pour nous placer au début du bloque à écrire. Nous utilisons ensuite la fonction "write" de la même librairie en lui passant le "file descriptor", la chaîne de caractère et la taille d'un block. Nous finissons par incrémenter le nombre d'écriture du disque.
+
+=== Disk Sanity Check
+
+Dans cette fonction nous vérifions si la structure du disque est nulle, si le block est dans le disque, si le disque a des blocks et si la donnée n'est pas nulle.
+
 == Procédure de réalisation
 
 = Structure de données
@@ -58,7 +111,7 @@ Pour répondre au besoin de simuler un système de fichiers comme celui de Linux
 )
 
 = Organisation
-Pour ce projet, nous étions divisé en groupe de trois étudiants, notre groupe étant constitué de Pierre Lacoste, Lilian Rouquette et Louis Richards. Bien que le groupe soit petit, cela a facilité la communication et le travail collaboratif car nous avons également pu choisir nos groupes ce qui a fait que l'entente au sein de l'équipe était valorisé. Afin de répartir les tâches nous avons mit en place un réunion hebdomadaire tous les [insérer un jour random]. Durant ces réunions nous avons pu discuter de nos avancés, du reste à faire et de se répartir les tâches restantes. 
+Pour ce projet, nous étions divisé en groupe de trois étudiants, notre groupe étant constitué de Pierre Lacoste, Lilian Rouquette et Louis Richards. Bien que le groupe soit petit, cela a facilité la communication et le travail collaboratif car nous avons également pu choisir nos groupes ce qui a fait que l'entente au sein de l'équipe était valorisé. Afin de répartir les tâches nous avons mis en place une réunion hebdomadaire tous les [insérer un jour random]. Durant ces réunions nous avons pu discuter de nos avancés, du reste à faire et de se répartir les tâches restantes. 
 
 === Outils utilisés
 Durant ce projet nous avons utilisé plusieurs outils. Pour l'organisation des tâches nous avons utilisé "ClickUp", pour le gestion de configuration nous avons utilisé "Github", pour la communication nous avons utilisé "Discord".

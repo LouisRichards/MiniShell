@@ -1,0 +1,41 @@
+@startuml
+
+component "User" as U
+
+component "User Prompt" as UP
+
+component "Shell" as S
+
+component "Kernel" as K
+
+component "File System" as FS
+
+component "Disk Emulator" as DE
+
+database "Disk" as D
+
+U -> UP : "Enter command"
+S -> UP : "Display prompt"
+
+UP -> S : "Execute command"
+
+S -> K : "sys_open"
+S -> K : "sys_read"
+S -> K : "sys_write"
+S -> K : "sys_close"
+
+K -> FS : "open"
+
+FS -> DE : "disk_create"
+FS -> DE : "disk_read"
+FS -> DE : "disk_write"
+FS -> DE : "disk_close"
+FS -> DE : "disk_open"
+
+DE -> D : "open"
+DE -> D : "close"
+DE -> D : "read"
+DE -> D : "seek"
+DE -> D : "write"
+
+@enduml
