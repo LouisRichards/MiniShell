@@ -1,0 +1,19 @@
+@startuml
+
+actor User
+participant Ecran
+participant Shell
+participant Noyau
+participant SGF
+participant Data
+
+Ecran -> Ecran : Attente d'une commande
+User -> Ecran : str = "mkdir folder_name"
+Ecran -> Shell : new_command(str)
+Shell -> Shell : parse_command(str)
+Shell -> Noyau : exec_command(Command)
+Noyau -> Noyau : reflexion sur les actions a effectuer
+Noyau -> SGF : fs_create(file_system)
+SGF -> Data : disk_write(disk, block, data)
+
+@enduml
