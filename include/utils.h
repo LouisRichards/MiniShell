@@ -11,6 +11,21 @@
 #define max(a, b)   \
     (((a) > (b)) ? (a) : (b))
 
+/* Logging Prototypes */
+
+void enable_logging_to_file();
+
+void disable_logging_to_file();
+
+void log_error(const char *fmt, ...);
+
+void log_info(const char *fmt, ...);
+
+void log_debug(const char *fmt, ...);
+
+void log_warning(const char *fmt, ...);
+
+void close_log_file(); /* TODO: Temporary */
+
 #endif
 
-/* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */

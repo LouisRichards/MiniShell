@@ -23,39 +23,59 @@ static char* test_disk_open() {
     mu_assert("disk should not open\n", res == DISK_FAILURE);
     d->_isopen = 0;
     
-    res = disk_open(d, "data/test/good_disk_64b");
+    res = disk_open(d, "data/test/disk/good_disk_64b.vdisk");
     mu_assert("this disk should open correctly\n", res == DISK_SUCCESS);
     mu_assert("this disk should contains 64 blocks\n\n", d->_blocks == 64);
     res = disk_close(d);
     mu_assert("this disk should close correctly\n", res == DISK_SUCCESS);
     d = init_disk_struct();
     
-    disk_open(d, "data/test/good_disk_64b");
-    res = disk_open(d, "data/test/good_disk_64b");
+    disk_open(d, "data/test/disk/good_disk_64b.vdisk");
+    res = disk_open(d, "data/test/disk/good_disk_64b.vdisk");
     mu_assert("can't open a disk twice\n", res == DISK_FAILURE);
     disk_close(d); d = init_disk_struct();
 
-    res = disk_open(d, "data/test/bad_disk1"); 
+    res = disk_open(d, "data/test/disk/bad_disk1.vdisk"); 
     mu_assert("this disk should not open correctly\n", res == DISK_FAILURE);
     disk_close(d);
     
     return EXIT_SUCCESS;
 }
 
-static char* test_01_disk_read() {
+static char* test_disk_create() {
+	char* path = "data/test/disk/disk_created.vdisk";
+    Disk* d = init_disk_struct();
+    int res = disk_create(path, 64);
+    mu_assert("this disk should be created", res == DISK_SUCCESS);
+    res = disk_open(d, path);
+    mu_assert("this disk should open", res == DISK_SUCCESS);
+    mu_assert("disk should have 64", disk_get_blocks(d) == 64);
+    disk_close(d);
     
+	unlink("data/test/disk/disk_created.vdisk"); // delete the file
     return EXIT_SUCCESS;
 }
 
-static char* test_02_disk_write() {
+static char* test_disk_read() {
+    char* path_test1 = "data/test/disk/disk_test_read1.vdisk";
+    Disk* d = init_disk_struct();
+    disk_open(d, path_test1);
+    
+    
+    disk_close(d);
+    return EXIT_SUCCESS;
+}
+
+static char* test_disk_write() {
     
     return EXIT_SUCCESS;
 }
 
 static char* all_tests() {
     mu_run_test(test_disk_open);
-    mu_run_test(test_01_disk_read);
-    mu_run_test(test_02_disk_write);
+    mu_run_test(test_disk_create);
+    mu_run_test(test_disk_read);
+    mu_run_test(test_disk_write);
     return 0;
 }
 
