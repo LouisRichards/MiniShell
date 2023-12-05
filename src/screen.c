@@ -6,6 +6,7 @@
 #include "utils.h"
 #include <string.h>
 
+#ifdef RELEASE
 int main(void)
 {
 	enable_logging_to_file();
@@ -41,3 +42,4 @@ int main(void)
 
 	return 0;
 }
+#endif

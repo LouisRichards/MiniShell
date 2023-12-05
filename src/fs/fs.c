@@ -1,8 +1,7 @@
 /* fs.c: SimpleFS file system */
 
 #include "fs/fs.h"
-#include "fs/logging.h"
-#include "fs/utils.h"
+#include "utils.h"
 
 /**
  * Debug FileSystem by doing the following

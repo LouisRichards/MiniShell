@@ -1,9 +1,9 @@
 /* unit_disk.c: Unit tests for SimpleFS disk emulator */
 
 #include "fs/disk.h"
-#include "logging.h"
 #include "test/minunit.h"
 
+#include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
