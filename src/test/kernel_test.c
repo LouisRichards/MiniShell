@@ -61,7 +61,7 @@ static char* test_kernel_write() {
 
 	char buf[10] = "Ceci est ";
 
-	int ret = sys_write(fd, buf, 9);
+	sys_write(fd, buf, 9);
 
 	mu_assert("Error writing file", strcmp(buf, "Ceci est ")==0);
 

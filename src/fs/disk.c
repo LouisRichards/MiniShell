@@ -1,9 +1,9 @@
 /* disk.c: simple disk emulator */
 
 #include "fs/disk.h"
-#include "logging.h"
 #include "utils.h"
 
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
