@@ -1,0 +1,25 @@
+@startuml
+
+start
+
+if (!disk_sanity_check) then (no)
+	stop
+endif
+
+:seek;
+
+if (seek < 0) then (yes)
+	stop
+endif
+
+:read;
+
+if (read != BLOCK_SIZE) then (yes)
+	stop
+endif
+
+:increment disk reads;
+
+stop
+
+@enduml

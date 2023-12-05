@@ -54,3 +54,5 @@ dkms.conf
 # Mac hidden files
 */.DS_Store
 .DS_Store
+bin
+log.txt

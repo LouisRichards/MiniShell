@@ -1,0 +1,28 @@
+@startuml
+
+start
+
+if (disk is open) then (yes)
+	:Error: disk is already open;
+	stop
+endif
+
+:Open disk;
+
+if (fd < 0) then (yes)
+	:Error opening disk;
+	stop
+endif
+
+:Check disk size;
+
+if (nblocks % BLOCK_SIZE != 0) then (yes)
+	:Error: invalid number of blocks;
+	stop
+endif
+
+:Create disk structure;
+
+stop
+
+@enduml

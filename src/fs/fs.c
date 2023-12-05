@@ -32,6 +32,7 @@ void fs_debug(Disk *disk)
  **/
 bool fs_format(Disk *disk)
 {
+    return false;
 }
 
 /**
@@ -53,6 +54,7 @@ bool fs_format(Disk *disk)
  **/
 bool fs_mount(FileSystem *fs, Disk *disk)
 {
+    return true;
 }
 
 /**
@@ -82,6 +84,7 @@ void fs_unmount(FileSystem *fs)
  **/
 ssize_t fs_create(FileSystem *fs)
 {
+    return 0;
 }
 
 /**
@@ -101,6 +104,7 @@ ssize_t fs_create(FileSystem *fs)
  **/
 bool fs_remove(FileSystem *fs, size_t inode_number)
 {
+    return true;
 }
 
 /**
@@ -112,6 +116,7 @@ bool fs_remove(FileSystem *fs, size_t inode_number)
  **/
 ssize_t fs_stat(FileSystem *fs, size_t inode_number)
 {
+    return 0;
 }
 
 /**
@@ -133,6 +138,7 @@ ssize_t fs_stat(FileSystem *fs, size_t inode_number)
  **/
 ssize_t fs_read(FileSystem *fs, size_t inode_number, char *data, size_t length, size_t offset)
 {
+    return 0;
 }
 
 /**
@@ -154,20 +160,23 @@ ssize_t fs_read(FileSystem *fs, size_t inode_number, char *data, size_t length, 
  **/
 ssize_t fs_write(FileSystem *fs, size_t inode_number, char *data, size_t length, size_t offset)
 {
+    return 0;
 }
 
 bool fs_save_inode(FileSystem *fs, size_t inode_number, Inode *node)
 {
+    return false;
 }
 void fs_initialize_free_block_bitmap(FileSystem *fs)
 {
 }
 ssize_t fs_allocate_free_block(FileSystem *fs)
 {
+    return 0;
 }
 
 bool fs_load_inode(FileSystem *fs, size_t inode_number, Inode *node)
 {
+    return false;
 }
 
-/* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
