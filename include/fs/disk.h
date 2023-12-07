@@ -8,7 +8,7 @@
 
 /* Disk Constants */
 
-#define BLOCK_SIZE 4096
+#define SECTOR_SIZE 4096
 
 /* Return Codes */
 
@@ -28,7 +28,7 @@ typedef struct Disk Disk;
 struct Disk
 {
     int _fd;        /* File descriptor of disk image	*/
-    size_t _blocks; /* Number of blocks in disk image	*/
+    size_t _sectors; /* Number of sectors in disk image	*/
     size_t _reads;  /* Number of reads to disk image	*/
     size_t _writes; /* Number of writes to disk image	*/
     size_t _size; /* size of disk in bytes */
@@ -46,22 +46,22 @@ Disk* init_disk_struct();
 
 /**
  *
- * Create an empty disk at specified path with the number of blocks specified.
+ * Create an empty disk at specified path with the number of sectors specified.
  * it cannot replace a file if it's already present and will return an error code if trying to do so.
+ * it will try to delete the file if it cannot write the disk it created
  *
  * @param       path        Path to disk image to create.
- * @param       blocks      Number of blocks to allocate for disk image.
+ * @param       sectors      Number of sectors to allocate for disk image.
  *
  * @return DISK_SUCCESS or DISK_FAILURE 
  **/
-int disk_create(const char *path, size_t blocks);
+int disk_create(const char *path, size_t sectors);
 
 /**
  *
  * Opens disk at specified path 
  *
  * @param       path        Path to disk image to create.
- * @param       blocks      Number of blocks to allocate for disk image.
  * @param       disk        previously allocated pointer of the disk to open 
  * @return DISK_SUCCESS or DISK_FAILURE 
  **/
@@ -77,43 +77,72 @@ int disk_open(Disk *disk, const char *path);
 int disk_close(Disk *disk);
 
 /**
- * Read data from disk at specified block into data buffer by doing the
+ * Read data from disk at specified sector into data buffer by doing the
  * following:
  *
  *  1. Performing sanity check.
  *
- *  2. Seeking to specified block.
+ *  2. Seeking to specified sector.
  *
- *  3. Reading from block to data buffer (must be BLOCK_SIZE).
+ *  3. Reading from sectors to data buffer (must be SECTOR_SIZE).
  *
  * @param       disk        Pointer to Disk structure.
- * @param       block       Block number to perform operation on.
+ * @param       sector       Sector number to perform operation on.
  * @param       data        Data buffer.
  *
  * @return      DISK_FAILURE or DISK_IO_FAIL on failure, DISK_SUCCESS
  **/
-int disk_read(Disk *disk, size_t block, char *data);
+int disk_read_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector);
 
 /**
- * Write data to disk at specified block from data buffer by doing the
+ * Write data to disk at specified sector from data buffer by doing the
  * following:
  *
  *  1. Performing sanity check.
  *
- *  2. Seeking to specified block.
+ *  2. Seeking to specified sector.
  *
- *  3. Writing data buffer (must be BLOCK_SIZE) to disk block.
+ *  3. Writing data buffer (must be SECTOR_SIZE) to disk sector.
  *
  * @param       disk        Pointer to Disk structure.
- * @param       block       Block number to perform operation on.
+ * @param       sector    Sector number to perform operation on.
  * @param       data        Data buffer.
  *
  * @return      Number of bytes written.
- *              (BLOCK_SIZE on success, DISK_FAILURE on failure).
+ *              (SECTOR_SIZE on success, DISK_FAILURE on failure).
  **/
-int disk_write(Disk *disk, size_t block, char *data);
+int disk_write_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector);
 
-size_t disk_get_blocks(Disk *disk);
+
+/**
+* Read up to count bytes from the disk at the desired offset
+* Performs bound checking on the disk and throw an error if it happens
+* @param    disk     Pointer to Disk structure
+* @param    data    Data buffer to put the data on
+* @param    count    number of bytes to read
+* @param    offset    it starts to read at this offset
+*
+* @return DISK_SUCCESS or DISK_FAILURE
+*    
+**/
+int disk_read_raw(Disk *disk, unsigned char *data, size_t count, size_t offset);
+
+/**
+* Write up to count bytes from the buffer at the disk offset
+* Performs bound checking on the disk and throw an error if it happens
+* @param    disk     Pointer to Disk structure
+* @param    data    Data buffer to put the data on
+* @param    count    number of bytes to read
+* @param    offset    it starts to read at this offset
+*
+* @return DISK_SUCCESS or DISK_FAILURE
+*    
+**/
+int disk_write_raw(Disk *disk, unsigned char *data, size_t count, size_t offset);
+
+
+
+size_t disk_get_sectors(Disk *disk);
 size_t disk_get_reads(Disk *disk);
 size_t disk_get_writes(Disk *disk);
 size_t disk_get_size(Disk *disk);
