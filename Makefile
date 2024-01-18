@@ -25,7 +25,12 @@ UNIT_TESTS = $(patsubst src/test/%,bin/test/%,$(patsubst %.c,%,$(wildcard src/te
 
 # Rules
 
-bin/test/%: src/test/%.c $(LIB_OBJS) $(FS_OBJS)
+all: $(UNIT_TESTS)
+
+bin/test/%_test: src/test/%_test.c 
+	@mkdir -p bin
+	@mkdir -p bin/test
+	@echo "Compiling $<..."
 	$(CC) $(CFLAGS) -o $@ $^
 
 test: $(UNIT_TESTS)
@@ -41,3 +46,10 @@ clean:
 	@echo "Cleaning up..."
 	@rm -f $(LIB_OBJS) $(FS_OBJS) $(TEST_OBJS) $(UNIT_TESTS) test test.log
 	@rm -rf bin/test/*.dSYM
+
+# Screen
+# ------
+#  Here we just compile the screen program linking utils.o and screen.o
+
+screen: src/screen/screen.c
+	$(CC) $(CFLAGS) -o bin/screen src/screen/screen.c src/utils.c
