@@ -2,18 +2,15 @@
 
 #include "fs/disk.h"
 #include "test/minunit.h"
+#include "utils.h"
 
 #include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
-
+#include <stdlib.h>
 #include <unistd.h>
-
-/* Constants */
-#define DISK_BLOCKS (4)
-
-/* Functions */
+#include <string.h>
 
 int tests_run = 0;
 
@@ -25,7 +22,7 @@ static char* test_disk_open() {
     
     res = disk_open(d, "data/test/disk/good_disk_64b.vdisk");
     mu_assert("this disk should open correctly\n", res == DISK_SUCCESS);
-    mu_assert("this disk should contains 64 blocks\n\n", d->_blocks == 64);
+    mu_assert("this disk should contains 64 sectors\n\n", d->_sectors == 64);
     res = disk_close(d);
     mu_assert("this disk should close correctly\n", res == DISK_SUCCESS);
     d = init_disk_struct();
@@ -49,17 +46,33 @@ static char* test_disk_create() {
     mu_assert("this disk should be created", res == DISK_SUCCESS);
     res = disk_open(d, path);
     mu_assert("this disk should open", res == DISK_SUCCESS);
-    mu_assert("disk should have 64", disk_get_blocks(d) == 64);
+    mu_assert("disk should have 64 sectors", disk_get_sectors(d) == 64);
     disk_close(d);
     
-	unlink("data/test/disk/disk_created.vdisk"); // delete the file
+	unlink(path); // delete the file
     return EXIT_SUCCESS;
 }
 
 static char* test_disk_read() {
+	uint8_t buf[SECTOR_SIZE] = {0};
     char* path_test1 = "data/test/disk/disk_test_read1.vdisk";
     Disk* d = init_disk_struct();
+    
     disk_open(d, path_test1);
+	disk_read_sector(d, buf, 0);
+	mu_assert("sector should begin with 0xDEADBEEF", buf[0] == 0xDE && buf[1] == 0xAD && buf[2] == 0xBE && buf[3] == 0xEF);
+	
+	disk_read_sector(d, buf, 5);
+	uint8_t* test_string_buf = buf + 388; 
+    mu_assert("sector should contain \"test string\"", strncmp("test string", (char*) test_string_buf, 11) == 0);
+    
+    //trying to read outside the limits
+    mu_assert("shouldn't read non existing sector ", disk_read_sector(d, buf, 33) != DISK_SUCCESS);
+    mu_assert("shouldn't read non existing sector ", disk_read_sector(d, buf, -1) != DISK_SUCCESS);
+
+    mu_assert("should read this", disk_read_raw(d, buf, 1, 135167) == DISK_SUCCESS);
+    mu_assert("should read this", disk_read_raw(d, buf, 1, 0) == DISK_SUCCESS);
+    mu_assert("shouldn't read this", disk_read_raw(d, buf, 2, 135167) != DISK_SUCCESS);
     
     
     disk_close(d);
@@ -67,19 +80,49 @@ static char* test_disk_read() {
 }
 
 static char* test_disk_write() {
+    uint8_t buf[SECTOR_SIZE] = {0};
+    char* path_test = "data/test/disk/disk_created_write.vdisk";
+    mu_assert("cannot create test disk", disk_create(path_test, 45) == DISK_SUCCESS);
+    Disk *disk = init_disk_struct();
+    disk_open(disk, path_test);
+
+    for (int b = 0; b < 45; b++) {
+        memset(buf, b, SECTOR_SIZE);
+        mu_assert("should write block", disk_write_sector(disk, buf, b) == DISK_SUCCESS);
+        mu_assert("should read block", disk_read_sector(disk, buf, b) == DISK_SUCCESS);
+        for (int i = 0; i < SECTOR_SIZE; i++) {
+            mu_assert("data should be equals", buf[i] == b);
+        }
+        
+        mu_assert("should write raw", disk_write_raw(disk, buf, SECTOR_SIZE, b*SECTOR_SIZE) == DISK_SUCCESS);
+        mu_assert("should read block", disk_read_sector(disk, buf, b) == DISK_SUCCESS);
+        for (int i = 0; i < SECTOR_SIZE; i++) {
+            mu_assert("data should be equals", buf[i] == b);
+        }
+        memset(buf, 0, SECTOR_SIZE);
+        
+    }
+    mu_assert("disk writes should be logged", disk_get_writes(disk) == 90);
+    mu_assert("shouldn't write outside", disk_write_sector(disk, buf, 46) == DISK_FAILURE);
     
+    
+    disk_close(disk);
+    unlink(path_test);
     return EXIT_SUCCESS;
 }
 
 static char* all_tests() {
+    printf("TESTING DISK OPEN\n");
     mu_run_test(test_disk_open);
+    printf("TESTING DISK CREATE\n");
     mu_run_test(test_disk_create);
+    printf("TESTING DISK READ\n");
     mu_run_test(test_disk_read);
+    printf("TESTING DISK WRITE\n");
     mu_run_test(test_disk_write);
     return 0;
 }
 
-/* Main execution */
 
 int main(int argc, char *argv[]) {
     //check if we are in the right path
