@@ -10,15 +10,15 @@
 #include <errno.h>
 #include <stdlib.h>
 
-/* Internal Prototyes */
+/* Internal Prototypes */
 
-bool disk_sanity_check(Disk *disk, size_t sector, unsigned char *data);
+bool disk_sanity_check(Disk *disk, size_t sector, uint8_t *data);
 
 /* External Functions */
 
 Disk* init_disk_struct() {
     Disk* d = malloc(sizeof(Disk));
-    d->_fd = 0;
+    d->_fd = -1;
     d->_reads = 0;
     d->_writes = 0;
     d->_size = 0;
@@ -37,10 +37,10 @@ int disk_create(const char *path, size_t sectors) {
 
     for (int i = 0; i < sectors; i++) {
         if (write(fd, buf, SECTOR_SIZE) != SECTOR_SIZE) {
-            log_error("cannot write disk: %s\n", strerror(errno));
-            log_error("trying to delete the disk");
+            log_error("[disk_emu] cannot write disk: %s\n", strerror(errno));
+            log_error("[disk_emu] trying to delete the disk");
             if (unlink(path) == -1) {
-                log_error("cannot delete the disk: %s\n", strerror(errno));
+                log_error("[disk_emu] cannot delete the disk: %s\n", strerror(errno));
             }
             
             return DISK_FAILURE;
@@ -53,7 +53,7 @@ int disk_create(const char *path, size_t sectors) {
 int disk_open(Disk *disk, const char *path)
 {
     if (disk->_isopen) {
-        log_error("a disk is already opened, please close it first\n");
+        log_error("[disk_emu] a disk is already opened, please close it first\n");
         return DISK_FAILURE;
     }
 
@@ -61,7 +61,7 @@ int disk_open(Disk *disk, const char *path)
     int fd = open(path, O_RDWR, 0600);
     if (fd < 0)
     {
-        log_error("cannot open the disk: %s\n", strerror(errno));
+        log_error("[disk_emu] cannot open the disk: %s\n", strerror(errno));
         return DISK_FAILURE;
     }
 
@@ -69,16 +69,16 @@ int disk_open(Disk *disk, const char *path)
     struct stat s;
     fstat(fd, &s);
     int size = s.st_size;
-    log_info("Disk size : %d\n", size);
+    log_info("[disk_emu] Disk size : %d\n", size);
 
     // it must contain an exact number of sectors
     if ((size % SECTOR_SIZE) != 0) {
-        log_error("the disk is corrupted\n");
+        log_error("[disk_emu] the disk is corrupted\n");
         return DISK_FAILURE;
     }
     
     int sector_num = size / SECTOR_SIZE;
-    log_info("Disk sector number %d\n", sector_num);
+    log_info("[disk_emu] Disk sector number %d\n", sector_num);
     
     disk->_fd = fd;
     disk->_sectors = sector_num;
@@ -91,16 +91,19 @@ int disk_open(Disk *disk, const char *path)
 }
 
 int disk_close(Disk *disk)
-{
+{    
     // Closing file descriptor
-    if (close(disk->_fd) == -1) {
-        log_error("cannot close the disk: %s\n", strerror(errno));
-        return DISK_FAILURE;
+    if (disk->_fd != -1) {
+       if (close(disk->_fd) == -1) {
+            log_error("[disk_emu] cannot close the disk: %s\n", strerror(errno));
+            return DISK_FAILURE;
+        } 
     }
+    
 
     // Reporting reads and writes
-    log_info("%lu reads\n", disk->_reads);
-    log_info("%lu writes sectors\n", disk->_writes);
+    log_info("[disk_emu] %lu reads\n", disk->_reads);
+    log_info("[disk_emu] %lu writes\n", disk->_writes);
 
     // Releasing disk structure memory
     free(disk);
@@ -109,18 +112,18 @@ int disk_close(Disk *disk)
 }
 
 
-int disk_read_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector)
+int disk_read_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector)
 {
     // Performing sanity check
     if (disk_sanity_check(disk, sector, data) == false) {
-        log_error("Error, read operation failed on disk\n");
+        log_error("[disk_emu] Error, read operation failed on disk\n");
         return DISK_FAILURE;
     }
 
     // Seeking to specified sector
     off_t seek = lseek(disk->_fd, (sector * SECTOR_SIZE), SEEK_SET);
     if (seek < 0) {
-        log_error("cannot seek into the disk");
+        log_error("[disk_emu] cannot seek into the disk");
         return DISK_IO_FAIL;
     }
 
@@ -134,7 +137,7 @@ int disk_read_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector)
     return DISK_SUCCESS;
 }
 
-int disk_write_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector)
+int disk_write_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector)
 {
     // Performing sanity check
     if (disk_sanity_check(disk, sector, data) == false) {
@@ -144,33 +147,33 @@ int disk_write_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector
     // Seeking to specified sector
     off_t seek = lseek(disk->_fd, (sector * SECTOR_SIZE), SEEK_SET);
     if (seek < 0) {
-        log_error("cannot seek into the disk\n");
+        log_error("[disk_emu] cannot seek into the disk\n");
         return DISK_IO_FAIL;
     }
 
     // Writing from sector data to buffer
     ssize_t nwrite = write(disk->_fd, data, SECTOR_SIZE);
     if (nwrite != SECTOR_SIZE) {
-        log_error("cannot write the disk");
+        log_error("[disk_emu] cannot write the disk");
         return DISK_IO_FAIL;
     }
     disk->_writes += 1;
     return DISK_SUCCESS;
 }
 
-int disk_read_raw(Disk *disk, unsigned char *data, size_t count, size_t offset) {
+int disk_read_raw(Disk *disk, uint8_t *data, size_t count, size_t offset) {
     if (offset + count > disk->_size) {
-        log_error("trying to read outside of the disk\n");
+        log_error("[disk_emu] trying to read outside of the disk\n");
         return DISK_FAILURE;
     }
 
     if (lseek(disk->_fd, offset, SEEK_SET) < 0) {
-        log_error("cannot seek into the disk\n");
+        log_error("[disk_emu] cannot seek into the disk\n");
         return DISK_IO_FAIL;
     }
 
     if (read(disk->_fd, data, count) != count) {
-        log_error("cannot read the disk");
+        log_error("[disk_emu] cannot read the disk");
         return DISK_IO_FAIL;
     }
 
@@ -178,19 +181,19 @@ int disk_read_raw(Disk *disk, unsigned char *data, size_t count, size_t offset) 
     return DISK_SUCCESS;
 }
 
-int disk_write_raw(Disk *disk, unsigned char *data, size_t count, size_t offset) {
+int disk_write_raw(Disk *disk, uint8_t *data, size_t count, size_t offset) {
     if (offset + count > disk->_size) {
-        log_error("trying to read outside of the disk");
+        log_error("[disk_emu] trying to write outside of the disk");
         return DISK_FAILURE;
     }
 
     if (lseek(disk->_fd, offset, SEEK_SET) < 0) {
-        log_error("cannot seek into the disk");
+        log_error("[disk_emu] cannot seek into the disk");
         return DISK_IO_FAIL;
     }
 
     if (write(disk->_fd, data, count) != count) {
-        log_error("cannot write the disk");
+        log_error("[disk_emu] cannot write the disk");
         return DISK_IO_FAIL;
     }
 
@@ -224,7 +227,7 @@ size_t disk_get_sectors(Disk *disk)
 }
 
 /* Internal Functions */
-bool disk_sanity_check(Disk *disk, size_t sector, unsigned char *data) 
+bool disk_sanity_check(Disk *disk, size_t sector, uint8_t *data) 
 {
     // Checking for valid disk, sector, and data
     return ((disk != NULL) && (sector < disk->_sectors && sector >= 0) && (data != NULL));

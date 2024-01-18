@@ -1,4 +1,6 @@
 #include <kernel.h>
+
+#include <sys/stat.h>
 #include <fcntl.h> 
 #include <unistd.h>
 
@@ -26,3 +28,17 @@ off_t sys_lseek(int fd, off_t offset, int whence)
 {
 	return lseek(fd, offset, whence);
 }
+
+int sys_stat(const char *restrict pathname, struct stat *statbuf) {
+	return stat(pathname, statbuf);
+}
+
+int sys_fstat(int fd, struct stat *statbuf) {
+	return fstat(fd, statbuf);
+}
+
+/* internal data structures */
+
+/* internal functions */
+
+

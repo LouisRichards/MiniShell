@@ -45,7 +45,7 @@ static char* test_disk_create() {
     mu_assert("this disk should be created", res == DISK_SUCCESS);
     res = disk_open(d, path);
     mu_assert("this disk should open", res == DISK_SUCCESS);
-    mu_assert("disk should have 64", disk_get_sectors(d) == 64);
+    mu_assert("disk should have 64 sectors", disk_get_sectors(d) == 64);
     disk_close(d);
     
 	unlink(path); // delete the file
@@ -53,7 +53,7 @@ static char* test_disk_create() {
 }
 
 static char* test_disk_read() {
-	unsigned char buf[SECTOR_SIZE] = {0};
+	uint8_t buf[SECTOR_SIZE] = {0};
     char* path_test1 = "data/test/disk/disk_test_read1.vdisk";
     Disk* d = init_disk_struct();
     
@@ -62,7 +62,7 @@ static char* test_disk_read() {
 	mu_assert("sector should begin with 0xDEADBEEF", buf[0] == 0xDE && buf[1] == 0xAD && buf[2] == 0xBE && buf[3] == 0xEF);
 	
 	disk_read_sector(d, buf, 5);
-	unsigned char* test_string_buf = buf + 388; 
+	uint8_t* test_string_buf = buf + 388; 
     mu_assert("sector should contain \"test string\"", strncmp("test string", (char*) test_string_buf, 11) == 0);
     
     //trying to read outside the limits
@@ -79,7 +79,7 @@ static char* test_disk_read() {
 }
 
 static char* test_disk_write() {
-    unsigned char buf[SECTOR_SIZE] = {0};
+    uint8_t buf[SECTOR_SIZE] = {0};
     char* path_test = "data/test/disk/disk_created_write.vdisk";
     mu_assert("cannot create test disk", disk_create(path_test, 45) == DISK_SUCCESS);
     Disk *disk = init_disk_struct();

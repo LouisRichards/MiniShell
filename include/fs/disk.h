@@ -4,6 +4,7 @@
 #define DISK_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 /* Disk Constants */
@@ -92,7 +93,7 @@ int disk_close(Disk *disk);
  *
  * @return      DISK_FAILURE or DISK_IO_FAIL on failure, DISK_SUCCESS
  **/
-int disk_read_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector);
+int disk_read_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector);
 
 /**
  * Write data to disk at specified sector from data buffer by doing the
@@ -111,7 +112,7 @@ int disk_read_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector)
  * @return      Number of bytes written.
  *              (SECTOR_SIZE on success, DISK_FAILURE on failure).
  **/
-int disk_write_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector);
+int disk_write_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector);
 
 
 /**
@@ -125,7 +126,7 @@ int disk_write_sector(Disk *disk, unsigned char data[SECTOR_SIZE], size_t sector
 * @return DISK_SUCCESS or DISK_FAILURE
 *    
 **/
-int disk_read_raw(Disk *disk, unsigned char *data, size_t count, size_t offset);
+int disk_read_raw(Disk *disk, uint8_t *data, size_t count, size_t offset);
 
 /**
 * Write up to count bytes from the buffer at the disk offset
@@ -138,7 +139,7 @@ int disk_read_raw(Disk *disk, unsigned char *data, size_t count, size_t offset);
 * @return DISK_SUCCESS or DISK_FAILURE
 *    
 **/
-int disk_write_raw(Disk *disk, unsigned char *data, size_t count, size_t offset);
+int disk_write_raw(Disk *disk, uint8_t *data, size_t count, size_t offset);
 
 
 
