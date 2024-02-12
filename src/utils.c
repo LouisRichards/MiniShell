@@ -142,3 +142,12 @@ void write_uint32_arr(uint8_t tab[4], uint32_t n) {
 		decal -= 8;
 	}
 }
+
+//just the ceil() function cuz too lazy to link math library, this doesn't work with negative numbers
+int math_ceil(double num) {
+	int inum = (int)num;
+    if (num == (double)inum) {
+		return inum;
+    }
+    return inum + 1;	
+}

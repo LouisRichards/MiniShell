@@ -111,7 +111,7 @@ int main() {
 	char* result = all_tests();
 
 	if (result != EXIT_SUCCESS) {
-		printf("%s\n", result);
+		printf("TEST ERROR : %s\n", result);
 	} else {
 		printf("ALL TESTS PASSED\n");
 	}

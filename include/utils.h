@@ -39,5 +39,7 @@ uint64_t get_uint64(uint8_t buf[8]);
 void write_uint64_arr(uint8_t tab[8], uint64_t n);
 
 void write_uint32_arr(uint8_t tab[4], uint32_t n);
+
+int math_ceil(double num);
 #endif
 
