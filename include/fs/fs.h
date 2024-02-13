@@ -219,5 +219,9 @@ ssize_t fs_mkdir(FileSystem *fs);
  * @param       fs              Pointer to FileSystem structure.
  **/
 ssize_t fs_assign_dir(FileSystem *fs, size_t directory, size_t inode, char* name);
-
+/**
+    Get all the inodes in the directory
+    * @param       fs              Pointer to FileSystem structure.
+**/
+ssize_t* fs_get_inodes_dir(FileSystem* fs, size_t directory);
 #endif
