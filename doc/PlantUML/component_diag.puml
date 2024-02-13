@@ -1,41 +1,63 @@
 @startuml
 
-component "User" as U
+class "Shell" as S << (H, lightblue) >> {
+ psh_cd(char **args): int
+ psh_help(char **args): int
+ psh_exit(char **args): int
+ psh_execute(char **args): int
+}
 
-component "User Prompt" as UP
+package "Commands" <<rectangle>> {
+  class "ls" as ls << (H, lightblue) >>
+  class "mkdir" as mkdir << (H, lightblue) >>
+  class "cp" as cp << (H, lightblue) >>
+  class "cat" as cat << (H, lightblue) >>
+}
 
-component "Shell" as S
+class "Kernel" as K << (H, lightblue) >> {
 
-component "Kernel" as K
+}
 
-component "File System" as FS
+class "File System" as FS << (H, lightblue) >> {
+ fs_create_file(FileSystem *fs, char *path): inode_t
+ fs_mkdir(FileSystem *fs, char *path): inode_t
+ fs_rmdir(FileSystem *fs, inode_t dir): bool
+ fs_unlink(FileSystem *fs, inode_t file): bool
+ fs_read(FileSystem *fs, size_t inode_number, uint8_t *data, size_t length, size_t offset): ssize_t 
+ fs_write(FileSystem *fs, size_t inode_number, uint8_t *data, size_t length, size_t offset): ssize_t
+ fs_rename(char* oldpath, char* newpath): ssize_t
+ fs_truncate(FileSystem *fs, inode_t file, size_t newsize): bool
+ fs_readdir(FileSystem *fs, inode_t dir): inode_t*
+ fs_getpath(FileSystem *fs, inode_t inode): char[FS_MAX_PATH_LENGTH]
+ fs_getinfo(FileSystem *fs, inode_t inode): InodeInfo
+ fs_format(Disk *disk, bool quick_format): bool
+ fs_mount(FileSystem *fs, Disk *disk): bool
+ fs_unmount(FileSystem *fs): bool
+}
 
-component "Disk Emulator" as DE
+class "Disk Emulator" as DE << (H, lightblue) >> { 
+ disk_create(const char *path, size_t sectors): int
+ disk_open(Disk *disk, const char *path): int
+ disk_close(Disk *disk): int
+ disk_read_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector): int
+ disk_write_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector): int
+ disk_read_raw(Disk *disk, uint8_t *data, size_t count, size_t offset): int
+ disk_write_raw(Disk *disk, uint8_t *data, size_t count, size_t offset): int
+}
 
-database "Disk" as D
+package Disk <<Database>> {
+ object image
+}
 
-U -> UP : "Enter command"
-S -> UP : "Display prompt"
+S -up-> Commands : ref
 
-UP -> S : "Execute command"
+S -> K
+Commands -> K
 
-S -> K : "sys_open"
-S -> K : "sys_read"
-S -> K : "sys_write"
-S -> K : "sys_close"
+K -> FS
 
-K -> FS : "open"
+FS -> DE 
 
-FS -> DE : "disk_create"
-FS -> DE : "disk_read"
-FS -> DE : "disk_write"
-FS -> DE : "disk_close"
-FS -> DE : "disk_open"
-
-DE -> D : "open"
-DE -> D : "close"
-DE -> D : "read"
-DE -> D : "seek"
-DE -> D : "write"
+DE -> image
 
 @enduml
