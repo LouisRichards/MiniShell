@@ -56,12 +56,12 @@ off_t sys_lseek(int fd, off_t offset, int whence)
  return lseek(fd, offset, linux_whence);
 }
 
-int sys_stat(const char *restrict pathname, struct stat *statbuf)
+int sys_stat(const char *restrict pathname, struct sys_stat *statbuf)
 {
  return -1; // stat(pathname, statbuf);
 }
 
-int sys_fstat(int fd, struct stat *statbuf)
+int sys_fstat(int fd, struct sys_stat *statbuf)
 {
  return -1; // fstat(fd, statbuf);
 }
@@ -86,9 +86,47 @@ size_t sys_rename(char *oldpath, char *newpath)
  return rename(oldpath, newpath);
 }
 
-char **sys_readdir(const char *pathname)
+bool sys_readdir(const char *pathname, struct sys_dirent *dirent)
 {
- return NULL;
+ // TODO replace this with sgf constants
+ const size_t MAX_DIR_SIZE = 512;
+ const size_t MAX_PATH_LENGTH = 512;
+
+ DIR *dir = opendir(pathname);
+ struct dirent *posix_dirent;
+
+ dirent->names = malloc(sizeof(char *) * MAX_DIR_SIZE);
+ dirent->paths = malloc(sizeof(char *) * MAX_DIR_SIZE);
+
+ int i = 0;
+ while ((posix_dirent = readdir(dir)) != NULL)
+ {
+  char *name = posix_dirent->d_name;
+  char abs_path[MAX_PATH_LENGTH];
+  realpath(name, abs_path);
+
+  dirent->names[i] = malloc(sizeof(char) * (strlen(name) + 1));
+  strcpy(dirent->names[i], name);
+  dirent->paths[i] = malloc(sizeof(char) * (strlen(abs_path) + 1));
+  strcpy(dirent->paths[i], abs_path);
+  // printf("folder : %s, abs_path: %s\n",name, abs_path);
+  i++;
+ }
+ dirent->entries = i;
+
+ closedir(dir);
+ return true;
+}
+
+void sys_free_dirent(struct sys_dirent *dirent)
+{
+ for (int i = 0; i < dirent->entries; i++)
+ {
+  free(dirent->names[i]);
+  free(dirent->paths[i]);
+ }
+ free(dirent->names);
+ free(dirent->paths);
 }
 
 /* internal data structures */

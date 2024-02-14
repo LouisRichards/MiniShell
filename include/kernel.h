@@ -5,6 +5,10 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <dirent.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <string.h>
 
 #ifndef KERNEL_H
 #define KERNEL_H
@@ -18,13 +22,20 @@ enum whence
 };
 
 /* Kernel data structures */
-struct stat
+struct sys_stat
 {
  inode_t st_ino;  /*inode number*/
  size_t st_atime; /* time of last access */
  size_t st_mtime; /* time of last data modification */
  int st_blocks;   /* blocks allocated for file */
  size_t st_size;  /* file size */
+};
+
+struct sys_dirent
+{
+ int entries;  // number of entries
+ char **names; // names of the folders
+ char **paths; // absolute path
 };
 
 /* Kernel system call prototypes */
@@ -43,9 +54,9 @@ ssize_t sys_write(int fd, const char *buf, size_t count); // High prio !!
 
 off_t sys_lseek(int fd, off_t offset, int whence); // TODO: Whence -> SET END simple_lseek(fd, offset, whence)
 
-int sys_stat(const char *restrict pathname, struct stat *statbuf); // Med prio
+int sys_stat(const char *restrict pathname, struct sys_stat *statbuf); // Med prio
 
-int sys_fstat(int fd, struct stat *statbuf); // Low prio
+int sys_fstat(int fd, struct sys_stat *statbuf); // Low prio
 
 int sys_mkdir(const char *pathname, mode_t mode); // High prio !!
 
@@ -55,6 +66,6 @@ bool sys_truncate(const char *pathname, size_t new_size); // Low prio
 
 size_t sys_rename(char *oldpath, char *newpath); // High prio !!
 
-char **sys_readdir(const char *pathname); // High prio !!
+bool sys_readdir(const char *pathname, struct sys_dirent *dirent); // High prio !!
 
 #endif /* KERNEL_H */
