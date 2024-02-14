@@ -29,6 +29,7 @@ struct sys_stat
  size_t sys_mtime; /* time of last data modification */
  int sys_blocks;   /* blocks allocated for file */
  size_t sys_size;  /* file size */
+ int sys_type;     /* file type */
 };
 
 struct sys_dirent
@@ -36,6 +37,13 @@ struct sys_dirent
  int entries;  // number of entries
  char **names; // names of the folders
  char **paths; // absolute path
+};
+
+enum filetype
+{
+ SYS_FILE,
+ SYS_DIR,
+ SYS_LINK
 };
 
 /* Kernel system call prototypes */

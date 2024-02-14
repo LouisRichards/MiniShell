@@ -58,7 +58,40 @@ off_t sys_lseek(int fd, off_t offset, int whence)
 
 int sys_stat(const char *restrict pathname, struct sys_stat *statbuf)
 {
- return -1; // stat(pathname, statbuf);
+ int res;
+ struct stat posix_statbuf;
+ res = stat(pathname, &posix_statbuf);
+ if (res == -1)
+ {
+  // logger erreur
+  printf("Erreur lectur fichier\n"); // utiliser log_error
+  return -1;
+ }
+
+ statbuf->sys_ino = posix_statbuf.st_ino;
+ statbuf->sys_atime = posix_statbuf.st_atime;
+ statbuf->sys_blocks = posix_statbuf.st_blocks;
+ statbuf->sys_size = posix_statbuf.st_size;
+ statbuf->sys_type = 0;
+ if (S_ISREG(posix_statbuf.st_mode))
+ {
+  statbuf->sys_type = SYS_FILE;
+ }
+ else if (S_ISDIR(posix_statbuf.st_mode))
+ {
+  statbuf->sys_type = SYS_DIR;
+ }
+ else if (S_ISLNK(posix_statbuf.st_mode))
+ {
+  statbuf->sys_type = SYS_LINK;
+ }
+ else
+ {
+  printf("FILE NOT SUPPORTED BY FS FOR THE MOMENT\n"); // TODO use log_error
+  exit(1);
+ }
+
+ return 0;
 }
 
 int sys_fstat(int fd, struct sys_stat *statbuf)
