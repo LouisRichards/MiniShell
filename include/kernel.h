@@ -24,11 +24,11 @@ enum whence
 /* Kernel data structures */
 struct sys_stat
 {
- inode_t st_ino;  /*inode number*/
- size_t st_atime; /* time of last access */
- size_t st_mtime; /* time of last data modification */
- int st_blocks;   /* blocks allocated for file */
- size_t st_size;  /* file size */
+ inode_t sys_ino;  /*inode number*/
+ size_t sys_atime; /* time of last access */
+ size_t sys_mtime; /* time of last data modification */
+ int sys_blocks;   /* blocks allocated for file */
+ size_t sys_size;  /* file size */
 };
 
 struct sys_dirent

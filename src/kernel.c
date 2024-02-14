@@ -128,7 +128,3 @@ void sys_free_dirent(struct sys_dirent *dirent)
  free(dirent->names);
  free(dirent->paths);
 }
-
-/* internal data structures */
-
-/* internal functions */
