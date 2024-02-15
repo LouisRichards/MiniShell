@@ -262,6 +262,7 @@ char *psh_read_line(void)
 
 #define psh_TOK_BUFSIZE 64
 #define psh_TOK_DELIM " \t\r\n\a"
+#define psh_TOK_QUOTE "\""
 /**
    @brief Split a line into tokens (very naively).
    @param line The line.
@@ -269,38 +270,45 @@ char *psh_read_line(void)
  */
 char **psh_split_line(char *line)
 {
-    int bufsize = psh_TOK_BUFSIZE, position = 0;
-    char **tokens = malloc(bufsize * sizeof(char *));
-    char *token, **tokens_backup;
+    int nb_unquoted_lines = 0;
+    char **unquoted_lines = malloc(psh_TOK_BUFSIZE * sizeof(char *));
+    char *unquoted_line;
 
-    if (!tokens)
+    int nb_tokens = 0;
+    char **tokens = malloc(psh_TOK_BUFSIZE * sizeof(char *));
+    char *token;
+
+    unquoted_line = strtok(line, psh_TOK_QUOTE);
+    while (unquoted_line != NULL)
     {
-        fprintf(stderr, "psh: allocation error\n");
-        exit(EXIT_FAILURE);
+        unquoted_lines[nb_unquoted_lines] = unquoted_line;
+        nb_unquoted_lines++;
+        unquoted_line = strtok(NULL, psh_TOK_QUOTE);
     }
 
-    token = strtok(line, psh_TOK_DELIM);
-    while (token != NULL)
+    for (int i = 0; i < nb_unquoted_lines; i++)
     {
-        tokens[position] = token;
-        position++;
-
-        if (position >= bufsize)
+        if (i % 2 == 0)
         {
-            bufsize += psh_TOK_BUFSIZE;
-            tokens_backup = tokens;
-            tokens = realloc(tokens, bufsize * sizeof(char *));
-            if (!tokens)
+            token = strtok(unquoted_lines[i], psh_TOK_DELIM);
+            while (token != NULL)
             {
-                free(tokens_backup);
-                fprintf(stderr, "psh: allocation error\n");
-                exit(EXIT_FAILURE);
+                tokens[nb_tokens] = token;
+                nb_tokens++;
+                token = strtok(NULL, psh_TOK_DELIM);
             }
         }
-
-        token = strtok(NULL, psh_TOK_DELIM);
+        else
+        {
+            tokens[nb_tokens] = unquoted_lines[i];
+            nb_tokens++;
+        }
     }
-    tokens[position] = NULL;
+
+    // free
+    free(unquoted_lines);
+    tokens[nb_tokens] = NULL;
+
     return tokens;
 }
 
