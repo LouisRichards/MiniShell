@@ -24,6 +24,8 @@ void _insert(const char *file_path, const char *content)
   exit(EXIT_FAILURE);
  }
 
+ sys_lseek(fd, 0, W_END);
+
  sys_write(fd, content, size);
 
  sys_close(fd);

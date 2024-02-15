@@ -24,6 +24,8 @@ int (*builtin_func[])(char **) = {
 
 char *current_dir = NULL; /* Current working directory */
 
+char *PATH = "/bin";
+
 int psh_num_builtins()
 {
     return sizeof(builtin_str) / sizeof(char *);
@@ -341,7 +343,10 @@ void psh_loop(void)
  */
 int main(int argc, char **argv)
 {
-    // Load config files, if any.
+    // Get current directory and concat it to PATH
+    current_dir = malloc(1024 * sizeof(char));
+    getcwd(current_dir, 1023);
+    PATH = concat_str(3, current_dir, "/", "bin");
 
     // Run command loop.
     psh_loop();

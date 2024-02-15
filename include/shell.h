@@ -10,8 +10,6 @@
 #include <stdarg.h>
 #include <utils.h>
 
-#define PATH "./bin"
-
 // Function Declarations for builtin shell commands:
 int psh_cd(char **args);
 int psh_help(char **args);

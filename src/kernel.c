@@ -94,11 +94,6 @@ int sys_stat(const char *restrict pathname, struct sys_stat *statbuf)
  return 0;
 }
 
-int sys_fstat(int fd, struct sys_stat *statbuf)
-{
- return -1; // fstat(fd, statbuf);
-}
-
 int sys_mkdir(const char *pathname, mode_t mode)
 {
  return mkdir(pathname, mode);
@@ -114,7 +109,7 @@ bool sys_truncate(const char *pathname, size_t new_size)
  return truncate(pathname, new_size);
 }
 
-size_t sys_rename(char *oldpath, char *newpath)
+size_t sys_rename(const char *oldpath, const char *newpath)
 {
  return rename(oldpath, newpath);
 }

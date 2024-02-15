@@ -64,15 +64,13 @@ off_t sys_lseek(int fd, off_t offset, int whence); // TODO: Whence -> SET END si
 
 int sys_stat(const char *restrict pathname, struct sys_stat *statbuf); // Med prio
 
-int sys_fstat(int fd, struct sys_stat *statbuf); // Low prio
-
 int sys_mkdir(const char *pathname, mode_t mode); // High prio !!
 
 int sys_rmdir(const char *pathname); // High prio !!
 
 bool sys_truncate(const char *pathname, size_t new_size); // Low prio
 
-size_t sys_rename(char *oldpath, char *newpath); // High prio !!
+size_t sys_rename(const char *oldpath, const char *newpath); // High prio !!
 
 bool sys_readdir(const char *pathname, struct sys_dirent *dirent); // High prio !!
 
