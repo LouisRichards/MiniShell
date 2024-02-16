@@ -8,57 +8,56 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
-
 /*     File System Constants 
     /!\ run test when changing /!\ */ 
-#define FS_BLOCK_SIZE 4096
-#define FS_MAGIC_NUMBER 0x12ABCDEF
-#define FS_INODE_BLOCKS 512 // Number of blocks reserved for the inode table
-#define FS_INODE_BITMAP_LENGTH 1 // size of the inode table bitmap (in blocks)
-#define FS_DATA_BITMAP_LENGTH 1 // size of the data bitmap (in blocks)
-//inode settings
-#define FS_POINTERS_PER_INODE 8  // Number of direct pointers per inode 
-#define FS_INDIRECT_POINTERS_PER_INODE 4  // Number of indirect pointers per inode 
-#define FS_INODE_SIZE 128 // size of an inode structure in bytes (DO NOT change or it will break)
-#define FS_POINTER_SIZE 4 // size of a pointer in byte (DO NOT change or it will break)
+    
+enum FsConstants {
+	FS_BLOCK_SIZE =4096,
+	FS_MAGIC_NUMBER = 0x12ABCDEF,
+	FS_INODE_BLOCKS = 512,
+	FS_INODE_BITMAP_LENGTH = 1,
+	FS_DATA_BITMAP_LENGTH = 1,
+	FS_MAX_PATH_LENGTH = 512,
+	
+	//inode settings
+	FS_POINTERS_PER_INODE = 8,  // Number of direct pointers per inode 
+	FS_INDIRECT_POINTERS_PER_INODE = 4,  // Number of indirect pointers per inode 
+	FS_INODE_SIZE = 128, // size of an inode structure in bytes (DO NOT change or it will break)
+	FS_POINTER_SIZE = 4, // size of a pointer in byte (DO NOT change or it will break)
+	
+	//folder settings
+	FS_MAX_FILENAME_LENGTH = 16, // DO NOT CHANGE THIS PLEASE
+	FS_DIR_SIZE = 32,
 
-/* Computed constants */
-#define FS_POINTER_PER_BLOCK FS_BLOCK_SIZE/FS_POINTER_SIZE
-#define FS_INODE_TABLE_START_ADDR FS_BLOCK_SIZE + (FS_INODE_BITMAP_LENGTH * FS_BLOCK_SIZE) + (FS_DATA_BITMAP_LENGTH * FS_BLOCK_SIZE) //offset of inode table in the partition
+	/* Computed constants */
+	FS_POINTER_PER_BLOCK = FS_BLOCK_SIZE/FS_POINTER_SIZE,
+	FS_INODE_BITMAP_START_ADDR = FS_BLOCK_SIZE,
+	FS_DATA_BITMAP_START_ADDR = FS_BLOCK_SIZE + (FS_INODE_BITMAP_LENGTH * FS_BLOCK_SIZE),
+	FS_INODE_TABLE_START_ADDR = FS_BLOCK_SIZE + (FS_INODE_BITMAP_LENGTH * FS_BLOCK_SIZE) + (FS_DATA_BITMAP_LENGTH * FS_BLOCK_SIZE), //offset of inode table in the partition
+	FS_DATA_START_ADDR = FS_INODE_TABLE_START_ADDR+(FS_BLOCK_SIZE * FS_INODE_BLOCKS),
 
-#define FS_MAX_INODES (FS_BLOCK_SIZE / FS_INODE_SIZE) * FS_INODE_BLOCKS //maximum number of inodes in the system
-#define FS_MAX_FILE_SIZE (FS_POINTERS_PER_INODE * FS_BLOCK_SIZE) + (FS_INDIRECT_POINTERS_PER_INODE * ((FS_BLOCK_SIZE/FS_POINTER_SIZE) * FS_BLOCK_SIZE))
-/* File System Structures */
-
-typedef struct SuperBlock SuperBlock;
-struct SuperBlock
-{
-    uint32_t magic_number; /* File system magic number */
-    uint32_t blocks_count;  /* Number of blocks in fblocks_countile system */
-    uint32_t inode_blocks; /* Number of blocks reserved for inodes */
-    uint32_t inodes_count;  /* Number of inodes in file system */
-    uint32_t free_data_blocks_count; /* value indicating the total number of free data blocks */
+	FS_MAX_INODES = (FS_BLOCK_SIZE / FS_INODE_SIZE) * FS_INODE_BLOCKS, //maximum number of inodes in the system
+	FS_MAX_FILE_SIZE = (FS_POINTERS_PER_INODE * FS_BLOCK_SIZE) + (FS_INDIRECT_POINTERS_PER_INODE * ((FS_BLOCK_SIZE/FS_POINTER_SIZE) * FS_BLOCK_SIZE))
 };
 
-typedef struct Inode Inode;
-struct Inode
-{
+
+
+/* File System Structures */
+typedef int inode_t;
+
+typedef struct InodeInfo InodeInfo;
+struct InodeInfo {
     uint8_t type; // format of the file, see fs_filetype enumeration
     uint64_t size; // the size of the file in bytes
     uint64_t atime; // last time the file was accessed (UNIX time)
     uint64_t mtime; // last time the file was modified (UNIX time)
-    uint32_t direct_pointers[FS_POINTERS_PER_INODE]; // block where the direct pointer, if the adress is 0x0000 that means no block is used on this pointer
-    uint32_t indirect_pointers[FS_INDIRECT_POINTERS_PER_INODE]; //same but point to an indirect blocks           
+    uint64_t blocks; // how many data blocks the inode is taking
 };
 
 typedef struct FileSystem FileSystem;
 struct FileSystem
 {
     Disk *disk;           /* Disk file system is mounted on */
-    bool data_bitmap[FS_BLOCK_SIZE*FS_INODE_BITMAP_LENGTH];    /* Free data bitmap */
-    bool inode_bitmap[FS_BLOCK_SIZE*FS_DATA_BITMAP_LENGTH];    /* Inode bitmap */
-    SuperBlock superblock; /* File system meta data */
 };
 
 enum fs_filetype {
@@ -128,45 +127,14 @@ bool fs_mount(FileSystem *fs, Disk *disk);
  **/
 void fs_unmount(FileSystem *fs);
 
-/**
- * Allocate an Inode in the FileSystem Inode table by doing the following:
- *
- *  1. Search Inode table for free inode.
- *
- *  2. Reserve free inode in Inode table.
- *
- * Note: Be sure to record updates to Inode table to Disk.
- *
- * @param       fs      Pointer to FileSystem structure.
- * @return      Inode number of allocated Inode.
- **/
-ssize_t fs_create(FileSystem *fs);
+inode_t fs_create_file(FileSystem *fs, char *path);
 
-/**
- * Remove Inode and associated data from FileSystem by doing the following:
- *
- *  1. Load and check status of Inode.
- *
- *  2. Release any direct blocks.
- *
- *  3. Release any indirect blocks.
- *
- *  4. Mark Inode as free in Inode table.
- *
- * @param       fs              Pointer to FileSystem structure.
- * @param       inode_number    Inode to remove.
- * @return      Whether or not removing the specified Inode was successful.
- **/
-bool fs_remove(FileSystem *fs, size_t inode_number);
+inode_t fs_mkdir(FileSystem *fs, char *path);
 
-/**
- * Return size of specified Inode.
- *
- * @param       fs              Pointer to FileSystem structure.
- * @param       inode_number    Inode to remove.
- * @return      Size of specified Inode (-1 if does not exist).
- **/
-ssize_t fs_stat(FileSystem *fs, size_t inode_number);
+bool fs_rmdir(FileSystem *fs, inode_t dir);
+
+bool fs_unlink(FileSystem *fs, inode_t file);
+
 
 /**
  * Read from the specified Inode into the data buffer exactly length bytes
@@ -206,22 +174,16 @@ ssize_t fs_read(FileSystem *fs, size_t inode_number, uint8_t *data, size_t lengt
  **/
 ssize_t fs_write(FileSystem *fs, size_t inode_number, uint8_t *data, size_t length, size_t offset);
 
-/**
- * Create directory and return its inode
- *
- * @param       fs              Pointer to FileSystem structure.
- **/
-ssize_t fs_mkdir(FileSystem *fs);
+ssize_t fs_rename(char* oldpath, char* newpath);
 
-/**
- * Assign inode to directory
- *
- * @param       fs              Pointer to FileSystem structure.
- **/
-ssize_t fs_assign_dir(FileSystem *fs, size_t directory, size_t inode, char* name);
-/**
-    Get all the inodes in the directory
-    * @param       fs              Pointer to FileSystem structure.
-**/
-ssize_t* fs_get_inodes_dir(FileSystem* fs, size_t directory);
+bool fs_truncate(FileSystem *fs, inode_t file, size_t newsize);
+
+char*fs_readdir(FileSystem *fs, inode_t dir); // retourne des chemins absolus
+
+inode_t fs_getinode(FileSystem *fs, char* path);
+
+InodeInfo fs_getinfo(FileSystem *fs, inode_t inode);
+
+
+
 #endif
