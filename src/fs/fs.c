@@ -806,7 +806,7 @@ int main(void) {
 	dir.file_type = FS_TYPE_FILE;
 	dir.inode = 666;
 	dir.name_len = 5;
-	strcpy(dir.name, "travail (hahahaha)");
+	strcpy(dir.name, "travail (oui)");
 	
 	directory_operation(disk, &dir, 0x0048B000, true);
 	directory_operation(disk, &dir_r, 0x0048B000, false);
