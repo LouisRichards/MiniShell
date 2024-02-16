@@ -116,3 +116,29 @@ FILE *create_log_file()
 
  return log_file;
 }
+
+uint32_t get_uint32(uint8_t buf[4]) {
+ return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
+}
+
+uint64_t get_uint64(uint8_t buf[8]) {
+ return ((uint64_t)buf[0] << 56) | ((uint64_t)buf[1] << 48) | ((uint64_t)buf[2] << 40) | ((uint64_t)buf[3] << 32) | ((uint64_t)buf[4] << 24) | ((uint64_t)buf[5] << 16) | ((uint64_t)buf[6] << 8) | buf[7];
+}
+
+void write_uint64_arr(uint8_t tab[8], uint64_t n) {
+	unsigned int decal = 56;
+	
+	for (int i = 0; i < 8; i++) {
+		tab[i] = n >> decal;
+		decal -= 8;
+	}
+}
+
+void write_uint32_arr(uint8_t tab[4], uint32_t n) {
+	unsigned int decal = 24;
+	
+	for (int i = 0; i < 4; i++) {
+		tab[i] = n >> decal;
+		decal -= 8;
+	}
+}

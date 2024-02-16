@@ -1,41 +1,74 @@
 @startuml
 
-component "User" as U
+class "Shell" as S << (H, lightblue) >> {
+ psh_cd(char **args): int
+ psh_help(char **args): int
+ psh_exit(char **args): int
+ psh_execute(char **args): int
+}
 
-component "User Prompt" as UP
+package "Commands" <<rectangle>> {
+  class "ls" as ls << (H, lightblue) >>
+  class "mkdir" as mkdir << (H, lightblue) >>
+  class "cp" as cp << (H, lightblue) >>
+  class "cat" as cat << (H, lightblue) >>
+}
 
-component "Shell" as S
+class "Kernel" as K << (H, lightblue) >> {
+int sys_open(const char *pathname, bool should_create); // High prio !!
+int sys_close(int fd); // Med prio !
+ssize_t sys_read(int fd, char *buf, size_t count); // High prio !!
+ssize_t sys_write(int fd, const char *buf, size_t count); // High prio !!
+off_t sys_lseek(int fd, off_t offset, int whence); // TODO: Whence -> SET END simple_lseek(fd, offset, whence)
+int sys_stat(const char *restrict pathname, struct sys_stat *statbuf); // Med prio
+int sys_fstat(int fd, struct sys_stat *statbuf); // Low prio
+int sys_mkdir(const char *pathname, mode_t mode); // High prio !!
+int sys_rmdir(const char *pathname); // High prio !!
+bool sys_truncate(const char *pathname, size_t new_size); // Low prio
+size_t sys_rename(char *oldpath, char *newpath); // High prio !!
+bool sys_readdir(const char *pathname, struct sys_dirent *dirent); // High prio !!
+}
 
-component "Kernel" as K
+class "File System" as FS << (H, lightblue) >> {
+ fs_create_file(FileSystem *fs, char *path): inode_t
+ fs_mkdir(FileSystem *fs, char *path): inode_t
+ fs_rmdir(FileSystem *fs, inode_t dir): bool
+ fs_unlink(FileSystem *fs, inode_t file): bool
+ fs_read(FileSystem *fs, size_t inode_number, uint8_t *data, size_t length, size_t offset): ssize_t 
+ fs_write(FileSystem *fs, size_t inode_number, uint8_t *data, size_t length, size_t offset): ssize_t
+ fs_rename(char* oldpath, char* newpath): ssize_t
+ fs_truncate(FileSystem *fs, inode_t file, size_t newsize): bool
+ fs_readdir(FileSystem *fs, inode_t dir): inode_t*
+ fs_getpath(FileSystem *fs, inode_t inode): char[FS_MAX_PATH_LENGTH]
+ fs_getinfo(FileSystem *fs, inode_t inode): InodeInfo
+ fs_format(Disk *disk, bool quick_format): bool
+ fs_mount(FileSystem *fs, Disk *disk): bool
+ fs_unmount(FileSystem *fs): bool
+}
 
-component "File System" as FS
+class "Disk Emulator" as DE << (H, lightblue) >> { 
+ disk_create(const char *path, size_t sectors): int
+ disk_open(Disk *disk, const char *path): int
+ disk_close(Disk *disk): int
+ disk_read_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector): int
+ disk_write_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector): int
+ disk_read_raw(Disk *disk, uint8_t *data, size_t count, size_t offset): int
+ disk_write_raw(Disk *disk, uint8_t *data, size_t count, size_t offset): int
+}
 
-component "Disk Emulator" as DE
+package Disk <<Database>> {
+ object image
+}
 
-database "Disk" as D
+S -up-> Commands : ref
 
-U -> UP : "Enter command"
-S -> UP : "Display prompt"
+S -> K
+Commands -> K
 
-UP -> S : "Execute command"
+K -> FS
 
-S -> K : "sys_open"
-S -> K : "sys_read"
-S -> K : "sys_write"
-S -> K : "sys_close"
+FS -> DE 
 
-K -> FS : "open"
-
-FS -> DE : "disk_create"
-FS -> DE : "disk_read"
-FS -> DE : "disk_write"
-FS -> DE : "disk_close"
-FS -> DE : "disk_open"
-
-DE -> D : "open"
-DE -> D : "close"
-DE -> D : "read"
-DE -> D : "seek"
-DE -> D : "write"
+DE -> image
 
 @enduml

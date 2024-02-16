@@ -21,6 +21,8 @@ static char* test_kernel_open() {
 
 	mu_assert("Error opening file", fd>0);
 
+	log_info("fd: %d opened correctly !\n", fd);
+
 	return EXIT_SUCCESS;
 }
 
@@ -33,6 +35,8 @@ static char* test_kernel_close() {
 	int ret = sys_close(fd);
 
 	mu_assert("Error closing file", ret==0);
+
+	log_info("fd: %d closed correctly !\n", fd);
 
 	return EXIT_SUCCESS;
 }
@@ -51,6 +55,8 @@ static char* test_kernel_read() {
 
 	mu_assert("Error reading file", strcmp(buf, "Ceci est un message du gouvernement")==0);
 
+	log_info("fd: %d read correctly !\n", fd);
+
 	return EXIT_SUCCESS;
 }
 
@@ -62,9 +68,11 @@ static char* test_kernel_write() {
 
 	char buf[10] = "Ceci est ";
 
-	int ret = sys_write(fd, buf, 9);
+	sys_write(fd, buf, 9);
 
 	mu_assert("Error writing file", strcmp(buf, "Ceci est ")==0);
+
+	log_info("fd: %d written correctly !\n", fd);
 
 	return EXIT_SUCCESS;
 }
@@ -93,6 +101,8 @@ static char* test_kernel_lseek() {
 
 	mu_assert("Error reading file", strcmp(buf, "Ceci est un message du gouvernement")==0);
 
+	log_info("fd: %d lseeked correctly !\n", fd);
+
 	return EXIT_SUCCESS;
 }
 
@@ -114,7 +124,7 @@ int main() {
 	if (result != EXIT_SUCCESS) {
 		printf("%s\n", result);
 	} else {
-		printf("ALL TESTS PASSED\n");
+		printf("---------ALL TESTS PASSED----------\n");
 	}
 	
 	printf("Tests run: %d\n", tests_run);
