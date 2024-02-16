@@ -13,10 +13,11 @@
 #include <unistd.h>
 
 int tests_run = 0;
+char* test_file = "./data/test/kernel/kernel_test";
 
 static char* test_kernel_open() {
 
-	int fd = sys_open("./data/test/kernel_test", O_RDONLY);
+	int fd = sys_open(test_file, O_RDONLY);
 
 	mu_assert("Error opening file", fd>0);
 
@@ -25,7 +26,7 @@ static char* test_kernel_open() {
 
 static char* test_kernel_close() {
 
-	int fd = sys_open("./data/test/kernel_test", O_RDONLY);
+	int fd = sys_open(test_file, O_RDONLY);
 
 	mu_assert("Error opening file", fd>0);
 
@@ -38,7 +39,7 @@ static char* test_kernel_close() {
 
 static char* test_kernel_read() {
 
-	int fd = sys_open("./data/test/kernel_test", O_RDONLY);
+	int fd = sys_open(test_file, O_RDONLY);
 
 	mu_assert("Error opening file", fd>0);
 
@@ -55,7 +56,7 @@ static char* test_kernel_read() {
 
 static char* test_kernel_write() {
 
-	int fd = sys_open("./data/test/kernel_test", O_WRONLY);
+	int fd = sys_open(test_file, O_WRONLY);
 
 	mu_assert("Error opening file", fd>0);
 
@@ -70,7 +71,7 @@ static char* test_kernel_write() {
 
 static char* test_kernel_lseek() {
 
-	int fd = sys_open("./data/test/kernel_test", O_RDONLY);
+	int fd = sys_open(test_file, O_RDONLY);
 
 	mu_assert("Error opening file", fd>0);
 
