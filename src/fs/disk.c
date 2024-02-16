@@ -163,6 +163,10 @@ int disk_write_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector)
 }
 
 int disk_read_raw(Disk *disk, uint8_t *data, size_t count, size_t offset) {
+    if (disk_sanity_check(disk, 0, data) == false) {
+        return DISK_FAILURE;
+    }
+    
     if (offset + count > disk->_size) {
         log_error("[disk_emu] trying to read outside of the disk\n");
         return DISK_FAILURE;
@@ -183,13 +187,17 @@ int disk_read_raw(Disk *disk, uint8_t *data, size_t count, size_t offset) {
 }
 
 int disk_write_raw(Disk *disk, uint8_t *data, size_t count, size_t offset) {
+    if (disk_sanity_check(disk, 0, data) == false) {
+        return DISK_FAILURE;
+    }
+    
     if (offset + count > disk->_size) {
-        log_error("[disk_emu] trying to write outside of the disk");
+        log_error("[disk_emu] trying to write outside of the disk\n");
         return DISK_FAILURE;
     }
 
     if (lseek(disk->_fd, offset, SEEK_SET) < 0) {
-        log_error("[disk_emu] cannot seek into the disk");
+        log_error("[disk_emu] cannot seek into the disk\n");
         return DISK_IO_FAIL;
     }
 
@@ -230,6 +238,10 @@ size_t disk_get_sectors(Disk *disk)
 /* Internal Functions */
 bool disk_sanity_check(Disk *disk, size_t sector, uint8_t *data) 
 {
+    if (!disk->_isopen) {
+        log_error("[disk_emu] the disk is not opened\n");
+    }
+    
     // Checking for valid disk, sector, and data
     return ((disk != NULL) && (sector < disk->_sectors && sector >= 0) && (data != NULL));
 }

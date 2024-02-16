@@ -109,8 +109,7 @@ int disk_read_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector);
  * @param       sector    Sector number to perform operation on.
  * @param       data        Data buffer.
  *
- * @return      Number of bytes written.
- *              (SECTOR_SIZE on success, DISK_FAILURE on failure).
+ * @return      DISK_FAILURE or DISK_IO_FAIL on failure, DISK_SUCCESS
  **/
 int disk_write_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector);
 
