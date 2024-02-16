@@ -1,0 +1,29 @@
+@startuml
+
+start
+
+if (!disk_sanity_check) then
+	stop
+endif
+
+if (writing outside of disk) then
+	stop
+endif
+
+:seek;
+
+if (seek < 0) then
+	stop
+endif
+
+:write;
+
+if (write != BLOCK_SIZE) then
+	stop
+endif
+
+:increment disk writes;
+
+stop
+
+@enduml

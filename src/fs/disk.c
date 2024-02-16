@@ -1,201 +1,236 @@
-/* disk.c: SimpleFS disk emulator */
+/* disk.c: simple disk emulator */
 
 #include "fs/disk.h"
-#include "fs/logging.h"
+#include "utils.h"
 
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <errno.h>
+#include <stdlib.h>
 
-/* Internal Prototyes */
+/* Internal Prototypes */
 
-bool disk_sanity_check(Disk *disk, size_t blocknum, const char *data);
+bool disk_sanity_check(Disk *disk, size_t sector, uint8_t *data);
 
 /* External Functions */
 
-/**
- *
- * Opens disk at specified path with the specified number of blocks by doing
- * the following:
- *
- *  1. Allocates Disk structure and sets appropriate attributes.
- *
- *  2. Opens file descriptor to specified path.
- *
- *  3. Truncates file to desired file size (blocks * BLOCK_SIZE).
- *
- * @param       path        Path to disk image to create.
- * @param       blocks      Number of blocks to allocate for disk image.
- *
- * @return      Pointer to newly allocated and configured Disk structure (NULL
- *              on failure).
- **/
-Disk *disk_open(const char *path, size_t blocks)
+Disk* init_disk_struct() {
+    Disk* d = malloc(sizeof(Disk));
+    d->_fd = -1;
+    d->_reads = 0;
+    d->_writes = 0;
+    d->_size = 0;
+    d->_isopen = 0;
+
+    return d;
+}
+
+int disk_create(const char *path, size_t sectors) {
+    char buf[SECTOR_SIZE] = {0};
+    int fd = open(path, O_RDWR | O_CREAT, 0600);
+    if (fd < 0) {
+        log_error("cannot create disk: %s\n", strerror(errno));
+        return DISK_FAILURE;
+    }
+
+    for (int i = 0; i < sectors; i++) {
+        if (write(fd, buf, SECTOR_SIZE) != SECTOR_SIZE) {
+            log_error("[disk_emu] cannot write disk: %s\n", strerror(errno));
+            log_error("[disk_emu] trying to delete the disk");
+            if (unlink(path) == -1) {
+                log_error("[disk_emu] cannot delete the disk: %s\n", strerror(errno));
+            }
+            
+            return DISK_FAILURE;
+        }
+    }
+
+    return DISK_SUCCESS;
+}
+
+int disk_open(Disk *disk, const char *path)
 {
-    // Allocating Block structure
-    Disk *disk = calloc(1, sizeof(Disk));
-    if (!disk)
-    {
-        return NULL;
+    if (disk->_isopen) {
+        log_error("[disk_emu] a disk is already opened, please close it first\n");
+        return DISK_FAILURE;
     }
 
     // Opening file descriptor and setting attributes
-    int fd = open(path, O_RDWR | O_CREAT, 0600);
+    int fd = open(path, O_RDWR, 0600);
     if (fd < 0)
     {
-        free(disk);
-        return NULL;
+        log_error("[disk_emu] cannot open the disk: %s\n", strerror(errno));
+        return DISK_FAILURE;
     }
 
-    disk->fd = fd;
-    disk->blocks = blocks;
-    disk->reads = 0;
-    disk->writes = 0;
-    disk->mounted = false;
+    // Check number of sector
+    struct stat s;
+    fstat(fd, &s);
+    int size = s.st_size;
+    log_info("[disk_emu] Disk size : %d\n", size);
 
-    // Truncating file
-    int truncated = ftruncate(disk->fd, (off_t)(blocks * BLOCK_SIZE));
-    if (truncated != 0)
-    {
-        // Failed to truncate.
-        close(disk->fd);
-        free(disk);
-        return NULL;
+    // it must contain an exact number of sectors
+    if ((size % SECTOR_SIZE) != 0) {
+        log_error("[disk_emu] the disk is corrupted\n");
+        return DISK_FAILURE;
     }
-
-    return disk;
+    
+    int sector_num = size / SECTOR_SIZE;
+    log_info("[disk_emu] Disk sector number %d\n", sector_num);
+    
+    disk->_fd = fd;
+    disk->_sectors = sector_num;
+    disk->_reads = 0; //structure is supposed to be empty but this is just in case
+    disk->_writes = 0;
+    disk->_size = size;
+    disk->_isopen = 1;
+    
+    return DISK_SUCCESS;
 }
 
-/**
- * Close disk structure by doing the following:
- *
- *  1. Close disk file descriptor.
- *
- *  2. Report number of disk reads and writes.
- *
- *  3. Releasing disk structure memory.
- *
- * @param       disk        Pointer to Disk structure.
- */
-void disk_close(Disk *disk)
-{
+int disk_close(Disk *disk)
+{    
     // Closing file descriptor
-    close(disk->fd);
+    if (disk->_fd != -1) {
+       if (close(disk->_fd) == -1) {
+            log_error("[disk_emu] cannot close the disk: %s\n", strerror(errno));
+            return DISK_FAILURE;
+        } 
+    }
+    
 
     // Reporting reads and writes
-    printf("%lu reads\n", disk->reads);
-    printf("%lu writes blocks\n", disk->writes);
+    log_info("[disk_emu] %lu reads\n", disk->_reads);
+    log_info("[disk_emu] %lu writes\n", disk->_writes);
 
     // Releasing disk structure memory
     free(disk);
+
+    return DISK_SUCCESS;
 }
 
-/**
- * Read data from disk at specified block into data buffer by doing the
- * following:
- *
- *  1. Performing sanity check.
- *
- *  2. Seeking to specified block.
- *
- *  3. Reading from block to data buffer (must be BLOCK_SIZE).
- *
- * @param       disk        Pointer to Disk structure.
- * @param       block       Block number to perform operation on.
- * @param       data        Data buffer.
- *
- * @return      Number of bytes read.
- *              (BLOCK_SIZE on success, DISK_FAILURE on failure).
- **/
-ssize_t disk_read(Disk *disk, size_t block, char *data)
+
+int disk_read_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector)
 {
     // Performing sanity check
-    if (disk_sanity_check(disk, block, data) == false)
-    {
+    if (disk_sanity_check(disk, sector, data) == false) {
+        log_error("[disk_emu] Error, read operation failed on disk\n");
         return DISK_FAILURE;
     }
 
-    // Seeking to specified block
-    off_t seek = lseek(disk->fd, (block * BLOCK_SIZE), SEEK_SET);
-    if (seek < 0)
-    {
-        return DISK_FAILURE;
+    // Seeking to specified sector
+    off_t seek = lseek(disk->_fd, (sector * SECTOR_SIZE), SEEK_SET);
+    if (seek < 0) {
+        log_error("[disk_emu] cannot seek into the disk");
+        return DISK_IO_FAIL;
     }
 
-    // Readin from block data to buffer
-    ssize_t nread = read(disk->fd, data, BLOCK_SIZE);
-    if (nread != BLOCK_SIZE)
-    {
-        return DISK_FAILURE;
+    // Reading from sector data to buffer
+    ssize_t nread = read(disk->_fd, data, SECTOR_SIZE);
+    if (nread != SECTOR_SIZE) {
+        return DISK_IO_FAIL;
     }
 
-    disk->reads += 1;
-    return BLOCK_SIZE;
+    disk->_reads += 1;
+    return DISK_SUCCESS;
 }
 
-/**
- * Write data to disk at specified block from data buffer by doing the
- * following:
- *
- *  1. Performing sanity check.
- *
- *  2. Seeking to specified block.
- *
- *  3. Writing data buffer (must be BLOCK_SIZE) to disk block.
- *
- * @param       disk        Pointer to Disk structure.
- * @param       block       Block number to perform operation on.
- * @param       data        Data buffer.
- *
- * @return      Number of bytes written.
- *              (BLOCK_SIZE on success, DISK_FAILURE on failure).
- **/
-ssize_t disk_write(Disk *disk, size_t block, char *data)
+int disk_write_sector(Disk *disk, uint8_t data[SECTOR_SIZE], size_t sector)
 {
     // Performing sanity check
-    if (disk_sanity_check(disk, block, data) == false)
-    {
+    if (disk_sanity_check(disk, sector, data) == false) {
         return DISK_FAILURE;
     }
 
-    // Seeking to specified block
-    off_t seek = lseek(disk->fd, (block * BLOCK_SIZE), SEEK_SET);
-    if (seek < 0)
-    {
+    // Seeking to specified sector
+    off_t seek = lseek(disk->_fd, (sector * SECTOR_SIZE), SEEK_SET);
+    if (seek < 0) {
+        log_error("[disk_emu] cannot seek into the disk\n");
+        return DISK_IO_FAIL;
+    }
+
+    // Writing from sector data to buffer
+    ssize_t nwrite = write(disk->_fd, data, SECTOR_SIZE);
+    if (nwrite != SECTOR_SIZE) {
+        log_error("[disk_emu] cannot write the disk");
+        return DISK_IO_FAIL;
+    }
+    disk->_writes += 1;
+    return DISK_SUCCESS;
+}
+
+int disk_read_raw(Disk *disk, uint8_t *data, size_t count, size_t offset) {
+    if (offset + count > disk->_size) {
+        log_error("[disk_emu] trying to read outside of the disk\n");
         return DISK_FAILURE;
     }
 
-    // Writing from block data to buffer
-    ssize_t nwrite = write(disk->fd, data, BLOCK_SIZE);
-    if (nwrite != BLOCK_SIZE)
-    {
+    if (lseek(disk->_fd, offset, SEEK_SET) < 0) {
+        log_error("[disk_emu] cannot seek into the disk\n");
+        return DISK_IO_FAIL;
+    }
+
+    if (read(disk->_fd, data, count) != count) {
+        log_error("[disk_emu] cannot read the disk");
+        return DISK_IO_FAIL;
+    }
+
+    disk->_reads += 1;
+    return DISK_SUCCESS;
+}
+
+int disk_write_raw(Disk *disk, uint8_t *data, size_t count, size_t offset) {
+    if (offset + count > disk->_size) {
+        log_error("[disk_emu] trying to write outside of the disk");
         return DISK_FAILURE;
     }
-    disk->writes += 1;
-    return BLOCK_SIZE;
+
+    if (lseek(disk->_fd, offset, SEEK_SET) < 0) {
+        log_error("[disk_emu] cannot seek into the disk");
+        return DISK_IO_FAIL;
+    }
+
+    if (write(disk->_fd, data, count) != count) {
+        log_error("[disk_emu] cannot write the disk");
+        return DISK_IO_FAIL;
+    }
+
+    disk->_writes += 1;
+    return DISK_SUCCESS;
+}
+
+size_t disk_get_reads(Disk *disk) 
+{
+    return disk->_reads;
+}
+
+size_t disk_get_writes(Disk *disk) 
+{
+    return disk->_reads;
+}
+
+size_t disk_get_size(Disk *disk) 
+{
+    return disk->_size;
+}
+
+bool disk_is_open(Disk *disk) 
+{
+    return disk->_isopen;
+}
+
+size_t disk_get_sectors(Disk *disk) 
+{
+    return disk->_sectors;
 }
 
 /* Internal Functions */
-
-/**
- * Perform sanity check before read or write operation:
- *
- *  1. Check for valid disk.
- *
- *  2. Check for valid block.
- *
- *  3. Check for valid data.
- *
- * @param       disk        Pointer to Disk structure.
- * @param       block       Block number to perform operation on.
- * @param       data        Data buffer.
- *
- * @return      Whether or not it is safe to perform a read/write operation
- *              (true for safe, false for unsafe).
- **/
-bool disk_sanity_check(Disk *disk, size_t block, const char *data)
+bool disk_sanity_check(Disk *disk, size_t sector, uint8_t *data) 
 {
-    // Checking for valid disk, block, and data
-    return ((disk != NULL) && (block < disk->blocks && block >= 0) && (data != NULL));
+    // Checking for valid disk, sector, and data
+    return ((disk != NULL) && (sector < disk->_sectors && sector >= 0) && (data != NULL));
 }
 
-/* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
